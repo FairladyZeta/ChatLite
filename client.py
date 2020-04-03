@@ -40,18 +40,17 @@ def lcd_print(text):
         pass
 
 def create_packet(metadata, data):
-    data = pickle.dumps((metadata, data))
     if use_encryption:
-        data = obfuscator.encrypt(data)
+        data = obfuscator.encrypt(bytes(data, 'utf-8'))
+    data = pickle.dumps((metadata, data))
     length = len(data)
     return bytes(f"{length:<10}", 'utf-8') + data
 
 def unwrap_packet(packet):
-    if use_encryption:
-        data = obfuscator.decrypt(packet)
-        data = pickle.loads(data)
-    else:
-        data = pickle.loads(packet)
+    data = pickle.loads(packet)
+    if use_encryption and data[0] != 'server':
+        data = list(data)
+        data[1] = obfuscator.decrypt(data[1]).decode('utf-8')
     return data
 
 def format_message(data):

@@ -16,28 +16,22 @@ server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server_socket.bind(('127.0.0.1', 1234))
 server_socket.listen(1)
 socket_connections = [server_socket]
-use_encryption = {'y':True, 'n':False}.get(input("Use encryption [y/n] ? ").lower(), 'n')
+#use_encryption = {'y':True, 'n':False}.get(input("Use encryption [y/n] ? ").lower(), 'n')
 
-if use_encryption:
-    password = input("Please enter the server password: ")
-    if len(password) != 32:
-        password += 'a' * (32 - len(password))
-    key = base64.urlsafe_b64encode(bytes(password, 'utf-8'))
-    obfuscator = Fernet(key)
+#if use_encryption:
+#    password = input("Please enter the server password: ")
+#    if len(password) != 32:
+#        password += 'a' * (32 - len(password))
+#    key = base64.urlsafe_b64encode(bytes(password, 'utf-8'))
+#    obfuscator = Fernet(key)
 
 
 def create_packet(metadata, data):
     data = pickle.dumps((metadata, data))
-    if use_encryption:
-        data = obfuscator.encrypt(data)
     return data
 
 def unwrap_packet(packet):
-    if use_encryption:
-        data = obfuscator.decrypt(packet)
-        data = pickle.loads(data)
-    else:
-        data = pickle.loads(packet)
+    data = pickle.loads(packet)
     return data
 
 def broadcast(packet):
