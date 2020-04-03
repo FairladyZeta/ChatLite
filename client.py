@@ -16,7 +16,7 @@ HEADERSIZE = 10
 
 username = input("Enter username: ")
 ip = input("Enter server's ip address: ")
-port = int(input("Enter server's port number: "))
+port = int(input("Enter number of server port: "))
 arduino = {'y':True, 'n':False}.get(input("Arduino connected?").lower(), 'n')
 use_encryption = {'y':True, 'n':False}.get(input("Use encryption [y/n] ? ").lower(), 'n')
 
