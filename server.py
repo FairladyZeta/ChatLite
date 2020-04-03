@@ -19,6 +19,7 @@ server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 server_socket.bind(('127.0.0.1', port))
 server_socket.listen(1)
 socket_connections = [server_socket]
+user_list = []
 #use_encryption = {'y':True, 'n':False}.get(input("Use encryption [y/n] ? ").lower(), 'n')
 
 #if use_encryption:
@@ -44,9 +45,9 @@ def broadcast(packet):
         client.send(packet)
 
 def process_message(data):
-    if data[1] == '':
-        print("huh")
-        smsg = create_packet('server', f"{data[0]} has joined! Welcome!")
+    if data[0] not in user_list:
+        user_list.append(data[0])
+        smsg = create_packet('server', f"{data[0]} has joined. Welcome!")
     elif data[1] == '/quit':
         smsg = create_packet('server', f"{data[0]} has quit.")
         broadcast(smsg)

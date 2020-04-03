@@ -16,8 +16,8 @@ HEADERSIZE = 10
 
 username = input("Enter username: ")
 ip = input("Enter server's ip address: ")
-port = int(input("Enter number of server port: "))
-arduino = {'y':True, 'n':False}.get(input("Arduino connected?").lower(), 'n')
+port = int(input("Enter number server port: "))
+arduino = {'y':True, 'n':False}.get(input("Arduino connected [y/n] ?").lower(), 'n')
 use_encryption = {'y':True, 'n':False}.get(input("Use encryption [y/n] ? ").lower(), 'n')
 
 
@@ -42,7 +42,7 @@ def lcd_print(text):
 def create_packet(metadata, data):
     if use_encryption:
         data = obfuscator.encrypt(bytes(data, 'utf-8'))
-    data = pickle.dumps((metadata, data))
+        data = pickle.dumps((metadata, data))
     length = len(data)
     return bytes(f"{length:<10}", 'utf-8') + data
 
@@ -50,7 +50,13 @@ def unwrap_packet(packet):
     data = pickle.loads(packet)
     if use_encryption and data[0] != 'server':
         data = list(data)
-        data[1] = obfuscator.decrypt(data[1]).decode('utf-8')
+        decrypted = obfuscator.decrypt(data[1]).decode('utf-8')
+        if decrypted:
+            data[1] = decrypted
+        else:
+            data[1] = "Failed to decrypt message"
+    else:
+        return data
     return data
 
 def format_message(data):
