@@ -2,15 +2,19 @@
 #include "rgb_lcd.h"
 
 rgb_lcd lcd;
-int colorR = 100;
-int colorG = 100;
-int colorB = 100;
+
+int colorR = 0;
+int colorG = 0;
+int colorB = 0;
+int analog_pin = 0;
+int button_pin = 2;
 
 void setup() {
   lcd.begin(16, 2);
   lcd.setRGB(colorR, colorG, colorB);
   Serial.begin(9600);
-  delay(1000);
+  delay(100);
+
 }
 
 void loop() {
@@ -44,9 +48,25 @@ void loop() {
       lcd.print(s);
     }
     delay(1000);
-    lcd.setRGB(colorR, colorG, colorB);
   }
-
+  lcd.setRGB(colorR, colorG, colorB);
   delay(100);
+  /*
+  if (digitalRead(button_pin) == true) {
+    long startpress = millis();
+    while (digitalRead(button_pin) == true){}
+    long elapsed_time = millis() - startpress;
+    if(elapsed_time > 3000) {
+      while (true) {
+        lcd.clear();
+        lcd.print("Default colors: ");
+        lcd.setCursor(0, 1);
+        lcd.print(sprintf("%f", analogRead(analog_pin)));
+      }
+    } else {
+      lcd.clear();
+    }
+  }
+  */
 
 }

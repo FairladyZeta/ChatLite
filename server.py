@@ -20,6 +20,7 @@ server_socket.bind(('127.0.0.1', port))
 server_socket.listen(1)
 socket_connections = [server_socket]
 user_list = []
+dictionary_of_clients = {}
 #use_encryption = {'y':True, 'n':False}.get(input("Use encryption [y/n] ? ").lower(), 'n')
 
 #if use_encryption:
@@ -30,8 +31,8 @@ user_list = []
 #    obfuscator = Fernet(key)
 
 
-def create_packet(metadata, data):
-    data = pickle.dumps((metadata, data))
+def create_packet(metadata, data, use_encryption=False):
+    data = pickle.dumps((metadata, data, use_encryption))
     return data
 
 def unwrap_packet(packet):
@@ -48,10 +49,6 @@ def process_message(data):
     if data[0] not in user_list:
         user_list.append(data[0])
         smsg = create_packet('server', f"{data[0]} has joined. Welcome!")
-    elif data[1] == '/quit':
-        smsg = create_packet('server', f"{data[0]} has quit.")
-        broadcast(smsg)
-        return 0
     else:
         smsg = create_packet(*data)
     broadcast(smsg)
@@ -68,13 +65,25 @@ while True:
             try:
                 print("Attempted receive")
                 incoming_size = int(s.recv(HEADERSIZE))
-                data = s.recv(incoming_size)
-                if len(data) == incoming_size:
-                    if not process_message(unwrap_packet(data)):
-                        s.close()
-                        socket_connections.remove(s)
-                    print(data)
+                packet = s.recv(incoming_size)
+                if len(packet) == incoming_size:
+                    #if not process_message(unwrap_packet(data)):
+                    #    s.close()
+                   #     socket_connections.remove(s)
+                    try:
+                        data = unwrap_packet(packet)
+                        if data[0] not in user_list:
+                            broadcast(create_packet('server', f"{data[0]} has joined. Welcome!"))
+                            user_list.append(data[0])
+                            dictionary_of_clients[str(s)] = data[0]
+                            print(dictionary_of_clients)
+                        else:
+                            broadcast(packet)
+                    except Exception as e:
+                        print(f"I have failed {e}")
             except Exception as e:
                 print(f"Error handling message: {e}")
                 s.close()
                 socket_connections.remove(s)
+                #broadcast(create_packet('server', f"{dictionary_of_clients[str(s)]} has quit."))
+                #dictionary_of_clients.pop(str(s), None)

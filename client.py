@@ -39,19 +39,23 @@ def lcd_print(text):
     else:
         pass
 
-def create_packet(metadata, data):
+# Create/unwrap packet use a variable use_encryption. It will be used by default if using encryption is true
+# But not used by default if using encryption is false
+# BUT, it can still be overrided upon calling the function
+def create_packet(metadata, data, use_encryption=use_encryption):
     if use_encryption:
         data = obfuscator.encrypt(bytes(data, 'utf-8'))
-        data = pickle.dumps((metadata, data))
+    data = pickle.dumps((metadata, data, use_encryption))
     length = len(data)
     return bytes(f"{length:<10}", 'utf-8') + data
 
 def unwrap_packet(packet):
     data = pickle.loads(packet)
-    if use_encryption and data[0] != 'server':
+    if data[2] and use_encryption:
         data = list(data)
         decrypted = obfuscator.decrypt(data[1]).decode('utf-8')
-        if decrypted:
+        print(decrypted, type(decrypted), len(decrypted))
+        if len(decrypted) > 1:
             data[1] = decrypted
         else:
             data[1] = "Failed to decrypt message"
@@ -60,7 +64,7 @@ def unwrap_packet(packet):
     return data
 
 def format_message(data):
-    return f"{data[0]}: {data[1]}"
+    return f"{data[0]}@{time.strftime('%T')}>> {data[1]}"
 
 def send_message():
     text = entry_field.get()
@@ -92,7 +96,7 @@ def message_handler():
                     fin()
                 data = s.recv(length)
                 message = unwrap_packet(data)
-                msg_list.insert(tkinter.END, format_message(message))
+                message_list.insert(tkinter.END, format_message(message))
                 print(message)
                 if message[0] != username:
                     lcd_print(f"{message[0]}: {message[1]}")
@@ -105,38 +109,36 @@ def fin():
     client_socket.close()
     exit(0)
 
-def settings_page():
-    swindow = tkinter.Toplevel()
-    swindow.wm_title('settings')
-    close_button = tkinter.Button(swindow, text='Close', command=swindow.destroy)
-    close_button.pack()
+def clear_messages():
+    message_list.delete(0,'end')
 
 if __name__ == '__main__':
     window = tkinter.Tk()
-    window.title("Light Chat")
+    window.title(f"Light Chat - {username}")
     messages_frame = tkinter.Frame(window)
-    msg_box = tkinter.StringVar()
-    msg_box.set("Type your messages here: ")
+    message_entry_box = tkinter.StringVar()
+    message_entry_box.set("Type your messages here: ")
     scrollbar = tkinter.Scrollbar(messages_frame)
     
-    msg_list = tkinter.Listbox(messages_frame, height=15, width=50,
+    message_list = tkinter.Listbox(messages_frame, height=15, width=50,
             yscrollcommand=scrollbar.set)
     scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
-    msg_list.pack(side=tkinter.LEFT, fill=tkinter.BOTH)
-    msg_list.pack()
+    message_list.pack(side=tkinter.LEFT, fill=tkinter.BOTH)
+    message_list.pack()
     messages_frame.pack()
-    entry_field = tkinter.Entry(window, textvariable=msg_list)
-    entry_field.bind("<Return>", send_message())
-    entry_field.pack()
+    entry_field = tkinter.Entry(window, textvariable=message_list)
+    entry_field.bind("<Return>", lambda _: send_message())
+    entry_field.pack(side=tkinter.LEFT, fill=tkinter.X)
     send_button = tkinter.Button(window, text="Send", command=send_message)
-    send_button.pack()
+    send_button.pack(side=tkinter.RIGHT)
 
     menubar = tkinter.Menu(window)
     menubar.add_command(label='quit', command=fin)
-    menubar.add_command(label='settings', command=settings_page)
-    menubar.add_command(label='connect')
+    #menubar.add_command(label='settings', command=settings_page)
+    menubar.add_command(label='clear', command=clear_messages)
     window.config(menu=menubar)
     window.protocol("WM_DELETE_WINDOW", fin)
+    # Send initial message to be read by server
     send_packet('')
     message_handler_thread = threading.Thread(target=message_handler, daemon=True)
     message_handler_thread.start()
