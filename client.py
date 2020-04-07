@@ -22,6 +22,9 @@ use_encryption = {
     'n': False
 }.get(input("Use encryption [y/n] ? ").lower(), 'n')
 
+client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+client_socket.connect((ip, port))
+
 if use_encryption:
     password = input("Please enter the server password: ")
     if len(password) != 32:
@@ -29,8 +32,6 @@ if use_encryption:
     key = base64.urlsafe_b64encode(bytes(password, 'utf-8'))
     obfuscator = Fernet(key)
 
-client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-client_socket.connect((ip, port))
 if arduino:
     arduino_connection = serial.Serial('/dev/ttyACM0')
 
