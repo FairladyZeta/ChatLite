@@ -5,10 +5,6 @@ import select
 import errno
 import pickle
 import base64
-from cryptography.fernet import Fernet
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 
 HEADERSIZE = 10
 
@@ -21,23 +17,17 @@ server_socket.listen(1)
 socket_connections = [server_socket]
 user_list = []
 dictionary_of_clients = {}
-#use_encryption = {'y':True, 'n':False}.get(input("Use encryption [y/n] ? ").lower(), 'n')
-
-#if use_encryption:
-#    password = input("Please enter the server password: ")
-#    if len(password) != 32:
-#        password += 'a' * (32 - len(password))
-#    key = base64.urlsafe_b64encode(bytes(password, 'utf-8'))
-#    obfuscator = Fernet(key)
 
 
 def create_packet(metadata, data, use_encryption=False):
     data = pickle.dumps((metadata, data, use_encryption))
     return data
 
+
 def unwrap_packet(packet):
     data = pickle.loads(packet)
     return data
+
 
 def broadcast(packet):
     length = len(packet)
@@ -45,14 +35,6 @@ def broadcast(packet):
     for client in socket_connections[1::]:
         client.send(packet)
 
-def process_message(data):
-    if data[0] not in user_list:
-        user_list.append(data[0])
-        smsg = create_packet('server', f"{data[0]} has joined. Welcome!")
-    else:
-        smsg = create_packet(*data)
-    broadcast(smsg)
-    return 1
 
 while True:
     to_read, to_write, errors = select.select(socket_connections, [], [])
@@ -60,23 +42,23 @@ while True:
         if s == server_socket:
             sockfd, addr = s.accept()
             socket_connections.append(sockfd)
-            print(f":::::: New connection on {addr} ::::::")
+            #print(f":::::: New connection on {addr} ::::::")#DEBUG
         else:
             try:
-                print("Attempted receive")
+                #print("Attempted receive")#DEBUG
                 incoming_size = int(s.recv(HEADERSIZE))
                 packet = s.recv(incoming_size)
                 if len(packet) == incoming_size:
-                    #if not process_message(unwrap_packet(data)):
-                    #    s.close()
-                   #     socket_connections.remove(s)
                     try:
                         data = unwrap_packet(packet)
                         if data[0] not in user_list:
-                            broadcast(create_packet('server', f"{data[0]} has joined. Welcome!"))
+                            broadcast(
+                                create_packet(
+                                    'server',
+                                    f"{data[0]} has joined. Welcome!"))
                             user_list.append(data[0])
                             dictionary_of_clients[str(s)] = data[0]
-                            print(dictionary_of_clients)
+                            #print(dictionary_of_clients)#DEBUG
                         else:
                             broadcast(packet)
                     except Exception as e:
@@ -85,5 +67,3 @@ while True:
                 print(f"Error handling message: {e}")
                 s.close()
                 socket_connections.remove(s)
-                #broadcast(create_packet('server', f"{dictionary_of_clients[str(s)]} has quit."))
-                #dictionary_of_clients.pop(str(s), None)

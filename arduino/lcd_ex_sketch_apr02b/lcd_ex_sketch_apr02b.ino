@@ -51,7 +51,7 @@ void loop() {
   }
   lcd.setRGB(colorR, colorG, colorB);
   delay(100);
-  /*
+  
   if (digitalRead(button_pin) == true) {
     long startpress = millis();
     while (digitalRead(button_pin) == true){}
@@ -61,12 +61,20 @@ void loop() {
         lcd.clear();
         lcd.print("Default colors: ");
         lcd.setCursor(0, 1);
-        lcd.print(sprintf("%f", analogRead(analog_pin)));
+        //lcd.print(sprintf("%d", analogRead(analog_pin)));
+        colorG = analogRead(analog_pin);
+        colorG = map(colorG, 0, 1023, 0, 255);
+        lcd.print(colorG);
+        Serial.println(colorG);
+        delay(100);
+        if (digitalRead(button_pin) == true) {
+          break;
+        }
       }
     } else {
       lcd.clear();
     }
   }
-  */
+  
 
 }

@@ -7,19 +7,20 @@ import threading
 import serial
 import base64
 from cryptography.fernet import Fernet
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-
 
 HEADERSIZE = 10
 
 username = input("Enter username: ")
 ip = input("Enter server's ip address: ")
 port = int(input("Enter number server port: "))
-arduino = {'y':True, 'n':False}.get(input("Arduino connected [y/n] ?").lower(), 'n')
-use_encryption = {'y':True, 'n':False}.get(input("Use encryption [y/n] ? ").lower(), 'n')
-
+arduino = {
+    'y': True,
+    'n': False
+}.get(input("Arduino connected [y/n] ?").lower(), 'n')
+use_encryption = {
+    'y': True,
+    'n': False
+}.get(input("Use encryption [y/n] ? ").lower(), 'n')
 
 if use_encryption:
     password = input("Please enter the server password: ")
@@ -33,11 +34,13 @@ client_socket.connect((ip, port))
 if arduino:
     arduino_connection = serial.Serial('/dev/ttyACM0')
 
+
 def lcd_print(text):
     if arduino:
         arduino_connection.write(bytes(text, 'utf-8'))
     else:
         pass
+
 
 # Create/unwrap packet use a variable use_encryption. It will be used by default if using encryption is true
 # But not used by default if using encryption is false
@@ -49,12 +52,13 @@ def create_packet(metadata, data, use_encryption=use_encryption):
     length = len(data)
     return bytes(f"{length:<10}", 'utf-8') + data
 
+
 def unwrap_packet(packet):
     data = pickle.loads(packet)
     if data[2] and use_encryption:
         data = list(data)
         decrypted = obfuscator.decrypt(data[1]).decode('utf-8')
-        print(decrypted, type(decrypted), len(decrypted))
+        #print(decrypted, type(decrypted), len(decrypted))#DEBUG
         if len(decrypted) > 1:
             data[1] = decrypted
         else:
@@ -63,8 +67,10 @@ def unwrap_packet(packet):
         return data
     return data
 
+
 def format_message(data):
     return f"{data[0]}@{time.strftime('%T')}>> {data[1]}"
+
 
 def send_message():
     text = entry_field.get()
@@ -75,6 +81,7 @@ def send_message():
         else:
             send_packet(text)
 
+
 def send_packet(text):
     packet = create_packet(username, text)
     try:
@@ -83,6 +90,7 @@ def send_packet(text):
         print(f"Failed to send message: {e}")
         client_socket.close()
         exit(0)
+
 
 def message_handler():
     while True:
@@ -97,20 +105,23 @@ def message_handler():
                 data = s.recv(length)
                 message = unwrap_packet(data)
                 message_list.insert(tkinter.END, format_message(message))
-                print(message)
+                #print(message)#DEBUG
                 if message[0] != username:
                     lcd_print(f"{message[0]}: {message[1]}")
 
             except Exception as e:
                 print(e)
 
+
 def fin():
     send_packet('/quit')
     client_socket.close()
     exit(0)
 
+
 def clear_messages():
-    message_list.delete(0,'end')
+    message_list.delete(0, 'end')
+
 
 if __name__ == '__main__':
     window = tkinter.Tk()
@@ -119,9 +130,11 @@ if __name__ == '__main__':
     message_entry_box = tkinter.StringVar()
     message_entry_box.set("Type your messages here: ")
     scrollbar = tkinter.Scrollbar(messages_frame)
-    
-    message_list = tkinter.Listbox(messages_frame, height=15, width=50,
-            yscrollcommand=scrollbar.set)
+
+    message_list = tkinter.Listbox(messages_frame,
+                                   height=15,
+                                   width=50,
+                                   yscrollcommand=scrollbar.set)
     scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
     message_list.pack(side=tkinter.LEFT, fill=tkinter.BOTH)
     message_list.pack()
@@ -140,6 +153,7 @@ if __name__ == '__main__':
     window.protocol("WM_DELETE_WINDOW", fin)
     # Send initial message to be read by server
     send_packet('')
-    message_handler_thread = threading.Thread(target=message_handler, daemon=True)
+    message_handler_thread = threading.Thread(target=message_handler,
+                                              daemon=True)
     message_handler_thread.start()
     window.mainloop()
