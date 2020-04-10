@@ -1,4 +1,5 @@
 import socket
+import os
 import time
 import select
 import pickle
@@ -6,6 +7,7 @@ import tkinter
 import threading
 import serial
 import base64
+from win10toast import ToastNotifier
 from cryptography.fernet import Fernet
 
 HEADERSIZE = 10
@@ -22,6 +24,8 @@ use_encryption = {
     'n': False
 }.get(input("Use encryption [y/n] ? ").lower(), 'n')
 
+
+
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((ip, port))
 
@@ -34,6 +38,21 @@ if use_encryption:
 
 if arduino:
     arduino_connection = serial.Serial('/dev/ttyACM0')
+
+use_notifications = {
+        'y':True,
+        'n':False
+}.get(input("Send desktop notifications [y/n] ?").lower(), 'n')
+
+def send_desktop_notification(text):
+    if use_notifications:
+        if os.name == 'nt':
+            toaster = ToastNotifier()
+            toaster.show_toast("ChatLite", text)
+        elif os.name == 'posix':
+            os.system(f'notify-send {text}')
+    else:
+        pass
 
 
 def lcd_print(text):
@@ -109,6 +128,7 @@ def message_handler():
                 #print(message)#DEBUG
                 if message[0] != username:
                     lcd_print(f"{message[0]}: {message[1]}")
+                    send_desktop_notification(f"{message[0]}: {message[1]}")
 
             except Exception as e:
                 print(e)
