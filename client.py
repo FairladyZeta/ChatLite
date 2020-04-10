@@ -7,7 +7,6 @@ import tkinter
 import threading
 import serial
 import base64
-from win10toast import ToastNotifier
 from cryptography.fernet import Fernet
 
 HEADERSIZE = 10
@@ -23,7 +22,6 @@ use_encryption = {
     'y': True,
     'n': False
 }.get(input("Use encryption [y/n] ? ").lower(), 'n')
-
 
 
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -44,15 +42,22 @@ use_notifications = {
         'n':False
 }.get(input("Send desktop notifications [y/n] ?").lower(), 'n')
 
-def send_desktop_notification(text):
-    if use_notifications:
-        if os.name == 'nt':
-            toaster = ToastNotifier()
+# This is a bit tangly. Because notifications work differently on windows/linux
+if use_notifications:
+    if os.name == 'nt':
+        from win10toast import ToastNotifier
+        global toaster
+        toaster = ToastNotifier()
+        def send_desktop_notification(text):
             toaster.show_toast("ChatLite", text)
-        elif os.name == 'posix':
-            os.system(f'notify-send {text}')
-    else:
+    elif os.name == 'posix':
+        def send_desktop_notification(text):
+            os.system(f'notify-send {text} 1> /dev/null')
+
+else:
+    def send_desktop_notification(text):
         pass
+
 
 
 def lcd_print(text):
