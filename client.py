@@ -6,6 +6,7 @@ import pickle
 import tkinter
 import threading
 import serial
+import serial.tools.list_ports
 import base64
 from cryptography.fernet import Fernet
 
@@ -14,10 +15,6 @@ HEADERSIZE = 10
 username = input("Enter username: ")
 ip = input("Enter server's ip address: ")
 port = int(input("Enter number server port: "))
-arduino = {
-    'y': True,
-    'n': False
-}.get(input("Arduino connected [y/n] ?").lower(), 'n')
 use_encryption = {
     'y': True,
     'n': False
@@ -34,8 +31,18 @@ if use_encryption:
     key = base64.urlsafe_b64encode(bytes(password, 'utf-8'))
     obfuscator = Fernet(key)
 
+arduino = {
+    'y': True,
+    'n': False
+}.get(input("Arduino connected [y/n] ?").lower(), 'n')
+
 if arduino:
-    arduino_connection = serial.Serial('/dev/ttyACM0')
+    print(f"Enter device path of Arduino (serial ports listed below):")
+    ports = list(serial.tools.list_ports.comports())
+    dic = {i: j.device for i, j in enumerate(ports)}
+    for k, v in dic.items():
+        print(f"{k} |  {v}")
+    arduino_connection = serial.Serial(dic.get(int(input("selection: ")), 0))
 
 use_notifications = {
         'y':True,
