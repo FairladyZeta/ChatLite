@@ -19,9 +19,6 @@ void setup() {
 
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  //lcd.setCursor(0, 1);
-  //lcd.print(millis()/1000);
   if(Serial.available() > 0) {
     String s = Serial.readString();
     /*

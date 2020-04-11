@@ -12,29 +12,38 @@ from cryptography.fernet import Fernet
 
 HEADERSIZE = 10
 
+# Variables/objects/methods necessary for the program are via
+# series of inputs at the start. A dictionary of [y/n] is often
+# used for compact boolean arguments
+
 username = input("Enter username: ")
 ip = input("Enter server's ip address: ")
 port = int(input("Enter number server port: "))
-use_encryption = {
-    'y': True,
-    'n': False
-}.get(input("Use encryption [y/n] ? ").lower(), 'n')
-
-
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client_socket.connect((ip, port))
+
+use_encryption = {
+    "y": True,
+    "n": False
+}.get(input("Use encryption [y/n] ? ").lower(), "n")
+
+# Setting up the crypto by padding the password in 'a's
+# is not the safest idea. But it suffices for the purpose
+# of demonstrating encrypted chat client
 
 if use_encryption:
     password = input("Please enter the server password: ")
     if len(password) != 32:
-        password += 'a' * (32 - len(password))
-    key = base64.urlsafe_b64encode(bytes(password, 'utf-8'))
+        password += "a" * (32 - len(password))
+    key = base64.urlsafe_b64encode(bytes(password, "utf-8"))
     obfuscator = Fernet(key)
 
 arduino = {
-    'y': True,
-    'n': False
-}.get(input("Arduino connected [y/n] ?").lower(), 'n')
+    "y": True,
+    "n": False
+}.get(input("Arduino connected [y/n] ?").lower(), "n")
+
+# The user can select their arduino from a list of serial ports
 
 if arduino:
     print(f"Enter device path of Arduino (serial ports listed below):")
@@ -45,58 +54,66 @@ if arduino:
     arduino_connection = serial.Serial(dic.get(int(input("selection: ")), 0))
 
 use_notifications = {
-        'y':True,
-        'n':False
-}.get(input("Send desktop notifications [y/n] ?").lower(), 'n')
+    "y": True,
+    "n": False
+}.get(input("Send desktop notifications [y/n] ?").lower(), "n")
 
-# This is a bit tangly. Because notifications work differently on windows/linux
+# send_desktop_notification is defined differently on windows
+# or linux. If client.py is running on a windows computer
+# win10toast is also imported
+# The function does nothing if use_notifications is false
+
 if use_notifications:
-    if os.name == 'nt':
+    if os.name == "nt":
         from win10toast import ToastNotifier
+
         global toaster
         toaster = ToastNotifier()
+
         def send_desktop_notification(text):
             toaster.show_toast("ChatLite", text)
-    elif os.name == 'posix':
+
+    elif os.name == "posix":
+
         def send_desktop_notification(text):
-            os.system(f'notify-send {text} 1> /dev/null')
+            os.system(f"notify-send {text} 1> /dev/null")
 
 else:
+
     def send_desktop_notification(text):
         pass
 
 
+if arduino:
 
-def lcd_print(text):
-    if arduino:
-        arduino_connection.write(bytes(text, 'utf-8'))
-    else:
+    def lcd_print(text):
+        if arduino:
+            arduino_connection.write(bytes(text, "utf-8"))
+else:
+
+    def lcd_print(text):
         pass
 
 
-# Create/unwrap packet use a variable use_encryption. It will be used by default if using encryption is true
+# Create/unwrap packet use a variable use_encryption.
+# It will be used by default if using encryption is true
 # But not used by default if using encryption is false
 # BUT, it can still be overrided upon calling the function
 def create_packet(metadata, data, use_encryption=use_encryption):
     if use_encryption:
-        data = obfuscator.encrypt(bytes(data, 'utf-8'))
+        data = obfuscator.encrypt(bytes(data, "utf-8"))
     data = pickle.dumps((metadata, data, use_encryption))
     length = len(data)
-    return bytes(f"{length:<10}", 'utf-8') + data
+    return bytes(f"{length:<10}", "utf-8") + data
 
 
+# unwrap packet will attempt to decrypt message if
+# use_encryption=true
 def unwrap_packet(packet):
-    data = pickle.loads(packet)
+    data = list(pickle.loads(packet))
     if data[2] and use_encryption:
-        data = list(data)
         decrypted = obfuscator.decrypt(data[1]).decode('utf-8')
-        #print(decrypted, type(decrypted), len(decrypted))#DEBUG
-        if len(decrypted) > 1:
-            data[1] = decrypted
-        else:
-            data[1] = "Failed to decrypt message"
-    else:
-        return data
+        data[1] = decrypted
     return data
 
 
@@ -104,11 +121,13 @@ def format_message(data):
     return f"{data[0]}@{time.strftime('%T')}>> {data[1]}"
 
 
+# This method is called by tkinter when the
+# button is pressed
 def send_message():
     text = entry_field.get()
-    entry_field.delete(0, 'end')
+    entry_field.delete(0, "end")
     if len(text) != 0:
-        if text == '/quit':
+        if text == "/quit":
             fin()
         else:
             send_packet(text)
@@ -137,7 +156,7 @@ def message_handler():
                 data = s.recv(length)
                 message = unwrap_packet(data)
                 message_list.insert(tkinter.END, format_message(message))
-                #print(message)#DEBUG
+                # print(message)#DEBUG
                 if message[0] != username:
                     lcd_print(f"{message[0]}: {message[1]}")
                     send_desktop_notification(f"{message[0]}: {message[1]}")
@@ -147,13 +166,13 @@ def message_handler():
 
 
 def fin():
-    send_packet('/quit')
+    send_packet("/quit")
     client_socket.close()
     exit(0)
 
 
 def clear_messages():
-    message_list.delete(0, 'end')
+    message_list.delete(0, "end")
 
 
 if __name__ == '__main__':
@@ -179,13 +198,13 @@ if __name__ == '__main__':
     send_button.pack(side=tkinter.RIGHT)
 
     menubar = tkinter.Menu(window)
-    menubar.add_command(label='quit', command=fin)
-    #menubar.add_command(label='settings', command=settings_page)
-    menubar.add_command(label='clear', command=clear_messages)
+    menubar.add_command(label="quit", command=fin)
+    # menubar.add_command(label='settings', command=settings_page)
+    menubar.add_command(label="clear", command=clear_messages)
     window.config(menu=menubar)
     window.protocol("WM_DELETE_WINDOW", fin)
     # Send initial message to be read by server
-    send_packet('')
+    send_packet("")
     message_handler_thread = threading.Thread(target=message_handler,
                                               daemon=True)
     message_handler_thread.start()
