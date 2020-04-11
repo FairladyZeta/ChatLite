@@ -41,7 +41,7 @@ if use_encryption:
 arduino = {
     "y": True,
     "n": False
-}.get(input("Arduino connected [y/n] ?").lower(), "n")
+}.get(input("Arduino connected [y/n] ? ").lower(), "n")
 
 # The user can select their arduino from a list of serial ports
 
@@ -56,7 +56,7 @@ if arduino:
 use_notifications = {
     "y": True,
     "n": False
-}.get(input("Send desktop notifications [y/n] ?").lower(), "n")
+}.get(input("Send desktop notifications [y/n] ? ").lower(), "n")
 
 # send_desktop_notification is defined differently on windows
 # or linux. If client.py is running on a windows computer
@@ -184,14 +184,16 @@ if __name__ == '__main__':
     scrollbar = tkinter.Scrollbar(messages_frame)
 
     message_list = tkinter.Listbox(messages_frame,
-                                   height=15,
-                                   width=50,
+                                   height=20,
+                                   width=60,
                                    yscrollcommand=scrollbar.set)
     scrollbar.pack(side=tkinter.RIGHT, fill=tkinter.Y)
     message_list.pack(side=tkinter.LEFT, fill=tkinter.BOTH)
     message_list.pack()
     messages_frame.pack()
-    entry_field = tkinter.Entry(window, textvariable=message_list)
+    entry_field = tkinter.Entry(window,
+                                textvariable=message_list,
+                                width=55)
     entry_field.bind("<Return>", lambda _: send_message())
     entry_field.pack(side=tkinter.LEFT, fill=tkinter.X)
     send_button = tkinter.Button(window, text="Send", command=send_message)
