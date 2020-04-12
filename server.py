@@ -5,7 +5,6 @@
 import socket
 import time
 import select
-import errno
 import pickle
 import base64
 
@@ -44,7 +43,7 @@ def broadcast(packet):
     and send the wrapped packet to all connected clients
     """
     length = len(packet)
-    packet = bytes(f"{length:<10}", "utf-8") + packet
+    packet = bytes(f"{length:<{HEADERSIZE}}", "utf-8") + packet
     for client in socket_connections[1::]:
         client.send(packet)
 

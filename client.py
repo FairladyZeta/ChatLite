@@ -104,7 +104,7 @@ def create_packet(metadata, data, use_encryption=use_encryption):
         data = obfuscator.encrypt(bytes(data, "utf-8"))
     data = pickle.dumps((metadata, data, use_encryption))
     length = len(data)
-    return bytes(f"{length:<10}", "utf-8") + data
+    return bytes(f"{length:<{HEADERSIZE}}", "utf-8") + data
 
 
 # unwrap packet will attempt to decrypt message if
