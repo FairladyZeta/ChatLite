@@ -5,7 +5,7 @@
 import socket
 import time
 import select
-import pickle
+import json
 import base64
 
 HEADERSIZE = 10
@@ -20,7 +20,7 @@ socket_connections = [server_socket]
 user_list = []
 # dictionary_of_clients = {}
 
-# create and unwrap packet are wrappers of pickle.dumps/loads.
+# create and unwrap packet are wrappers of json.dumps/loads.
 # The format of a packet is (metadata, data, use_encryption) where
 # metadata is always a string of the username and data is a string
 # of the message being send. use_encryption is a boolean and denotes
@@ -28,12 +28,17 @@ user_list = []
 
 
 def create_packet(metadata, data, use_encryption=False):
-    data = pickle.dumps((metadata, data, use_encryption))
+    data = bytes(json.dumps((metadata, data, use_encryption)), 'utf-8')
     return data
 
 
 def unwrap_packet(packet):
-    data = pickle.loads(packet)
+    print("---- unwrap func ---")
+    print(packet)
+    print(str(packet))
+    data = json.loads(packet)
+    print(data)
+    print("---end of unwrap---")
     return data
 
 
@@ -72,6 +77,7 @@ if __name__ == "__main__":
                     if len(packet) == incoming_size:
                         try:
                             data = unwrap_packet(packet)
+                            print(data)
                             if data[0] not in user_list:
                                 broadcast(
                                     create_packet(

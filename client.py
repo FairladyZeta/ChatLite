@@ -2,7 +2,7 @@ import socket
 import os
 import time
 import select
-import pickle
+import json
 import tkinter
 import threading
 import serial
@@ -102,7 +102,7 @@ else:
 def create_packet(metadata, data, use_encryption=use_encryption):
     if use_encryption:
         data = obfuscator.encrypt(bytes(data, "utf-8"))
-    data = pickle.dumps((metadata, data, use_encryption))
+    data = bytes(json.dumps((metadata, data.decode('utf-8'), use_encryption)), 'utf-8')
     length = len(data)
     return bytes(f"{length:<{HEADERSIZE}}", "utf-8") + data
 
@@ -110,9 +110,12 @@ def create_packet(metadata, data, use_encryption=use_encryption):
 # unwrap packet will attempt to decrypt message if
 # use_encryption=true
 def unwrap_packet(packet):
-    data = list(pickle.loads(packet))
+    data = list(json.loads(packet))
     if data[2] and use_encryption:
+        data[1] = bytes(data[1], 'utf-8')
+        print(type(data[1]), data[1])
         decrypted = obfuscator.decrypt(data[1]).decode('utf-8')
+        print("Decrypted: ",decrypted)
         data[1] = decrypted
     return data
 
